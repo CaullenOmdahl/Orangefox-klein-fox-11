@@ -54,7 +54,6 @@ clone_or_update_repo "https://gitlab.com/OrangeFox/misc/scripts" "scripts"
 cd scripts
 
 if [ -f "setup/android_build_env.sh" ]; then
-    echo "[INFO] Running android_build_env.sh script."
     sudo bash setup/android_build_env.sh
 else
     echo "[ERROR] android_build_env.sh not found!" >&2
@@ -62,7 +61,6 @@ else
 fi
 
 if [ -f "setup/install_android_sdk.sh" ]; then
-    echo "[INFO] Running install_android_sdk.sh script."
     sudo bash setup/install_android_sdk.sh || true
 else
     echo "[ERROR] install_android_sdk.sh not found!" >&2
