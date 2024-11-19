@@ -35,11 +35,12 @@ install_packages() {
 clone_or_update_repo() {
     local repo_url=$1
     local target_dir=$2
+    local branch=${3:-master}
     if [ ! -d "$target_dir" ]; then
-        git clone "$repo_url" "$target_dir"
+        git clone -b "$branch" "$repo_url" "$target_dir"
     else
         echo "[INFO] Updating existing repository at $target_dir."
-        cd "$target_dir" && git pull origin main
+        cd "$target_dir" && git fetch && git checkout "$branch" && git pull origin "$branch"
     fi
 }
 
@@ -47,7 +48,7 @@ clone_or_update_repo() {
 install_packages
 
 # Clone or update scripts repository
-clone_or_update_repo "https://gitlab.com/OrangeFox/misc/scripts" "scripts"
+clone_or_update_repo "https://gitlab.com/OrangeFox/misc/scripts" "scripts" "master"
 
 # Run setup scripts
 cd scripts
@@ -80,7 +81,7 @@ mkdir -p "$SYNC_DIR"
 cd "$SYNC_DIR"
 
 # Clone or update OrangeFox sync repository
-clone_or_update_repo "https://gitlab.com/OrangeFox/sync.git" "sync"
+clone_or_update_repo "https://gitlab.com/OrangeFox/sync.git" "sync" "master"
 
 cd sync
 
@@ -98,7 +99,7 @@ fi
 
 # Clone or update device tree
 DEVICE_DIR="$SYNC_PATH/device/blackshark"
-clone_or_update_repo "https://github.com/CaullenOmdahl/blackshark-klein-device-tree.git" "$DEVICE_DIR/klein"
+clone_or_update_repo "https://github.com/CaullenOmdahl/blackshark-klein-device-tree.git" "$DEVICE_DIR/klein" "main"
 
 # Set environment variables
 cd "$SYNC_PATH"
