@@ -21,110 +21,75 @@ handle_error() {
 }
 trap 'handle_error $LINENO' ERR
 
-# Function to install necessary packages (skip if already installed)
-install_packages() {
-    echo "[INFO] Installing necessary packages..."
-    sudo apt update && sudo apt upgrade -y
-    sudo apt install -y aria2 git gnupg flex bison build-essential zip curl zlib1g-dev \
-        gcc-multilib g++-multilib libc6-dev-i386 libncurses5-dev x11proto-core-dev libx11-dev \
-        lib32z1-dev ccache libgl1-mesa-dev libxml2-utils xsltproc unzip fontconfig imagemagick \
-        python2 python3 libssl-dev repo python-is-python3
-}
-
-# Clone or update repository function
-clone_or_update_repo() {
-    local repo_url=$1
-    local target_dir=$2
-    local branch=${3:-master}
-    if [ ! -d "$target_dir" ]; then
-        git clone -b "$branch" "$repo_url" "$target_dir"
-    else
-        echo "[INFO] Updating existing repository at $target_dir."
-        cd "$target_dir" && git fetch && git checkout "$branch" && git pull origin "$branch"
-    fi
-}
+# Update and upgrade system
+sudo apt update && sudo apt upgrade -y
 
 # Install necessary packages
-install_packages
+sudo apt install -y aria2 git gnupg flex bison build-essential zip curl zlib1g-dev \
+    gcc-multilib g++-multilib libc6-dev-i386 libncurses5-dev x11proto-core-dev libx11-dev \
+    lib32z1-dev ccache libgl1-mesa-dev libxml2-utils xsltproc unzip fontconfig imagemagick \
+    python2 python3 libssl-dev repo python-is-python3
 
-# Clone or update scripts repository
-clone_or_update_repo "https://gitlab.com/OrangeFox/misc/scripts" "scripts"
+# Clone scripts repository
+if [ ! -d "scripts" ]; then
+    git clone https://gitlab.com/OrangeFox/misc/scripts
+else
+    echo "[INFO] Updating existing repository at scripts."
+    cd scripts && git pull origin master
+    cd ..
+fi
 
 # Run setup scripts
 cd scripts
-
-if [ -f "setup/android_build_env.sh" ]; then
-    sudo bash setup/android_build_env.sh
-else
-    echo "[ERROR] android_build_env.sh not found!" >&2
-    exit 1
-fi
-
-if [ -f "setup/install_android_sdk.sh" ]; then
-    sudo bash setup/install_android_sdk.sh || true
-else
-    echo "[ERROR] install_android_sdk.sh not found!" >&2
-    exit 1
-fi
+sudo bash setup/android_build_env.sh
+sudo bash setup/install_android_sdk.sh || true
 
 # Configure Git
-GIT_NAME="Caullen Omdahl"
-GIT_EMAIL="Caullen.Omdahl@gmail.com"
-git config --global user.name "$GIT_NAME"
-git config --global user.email "$GIT_EMAIL"
+git config --global user.name "Caullen Omdahl"
+git config --global user.email "Caullen.Omdahl@gmail.com"
 
 # Create OrangeFox sync directory
-SYNC_DIR="$HOME/OrangeFox_sync"
-mkdir -p "$SYNC_DIR"
-cd "$SYNC_DIR"
+mkdir -p ~/OrangeFox_sync
+cd ~/OrangeFox_sync
 
-# Clone or update OrangeFox sync repository
-clone_or_update_repo "https://gitlab.com/OrangeFox/sync.git" "sync" "main"
-
-cd sync
-
-# Run orangefox_sync script with multithreading enabled where possible
-SYNC_PATH="$HOME/fox_11.0"
-if [ -d "$SYNC_PATH" ]; then
-    echo "[INFO] Updating existing build environment."
-    repo sync -j$(nproc) || {
-        echo "[ERROR] Failed to update repository. Check log for details." >&2
-        exit 1
-    }
+# Clone OrangeFox sync repository
+if [ ! -d "sync" ]; then
+    git clone https://gitlab.com/OrangeFox/sync.git
 else
-    ./orangefox_sync.sh --branch 11.0 --path "$SYNC_PATH"
+    echo "[INFO] Updating existing repository at sync."
+    cd sync && git pull origin main
+    cd ..
 fi
 
-# Clone or update device tree
-DEVICE_DIR="$SYNC_PATH/device/blackshark"
-clone_or_update_repo "https://github.com/CaullenOmdahl/blackshark-klein-device-tree.git" "$DEVICE_DIR/klein" "main"
+# Run orangefox_sync script
+cd ~/OrangeFox_sync/sync/
+./orangefox_sync.sh --branch 11.0 --path ~/fox_11.0
+
+# Clone device tree
+cd ~/fox_11.0/device/
+if [ ! -d "blackshark/klein" ]; then
+    git clone https://github.com/CaullenOmdahl/Blackshark-3-TWRP-Device-Tree.git blackshark/klein
+else
+    echo "[INFO] Updating existing device tree."
+    cd blackshark/klein && git pull origin main
+fi
 
 # Set environment variables
-cd "$SYNC_PATH"
+cd ~/fox_11.0
 export ALLOW_MISSING_DEPENDENCIES=true
 export FOX_BUILD_DEVICE=klein
 export LC_ALL=C
 
 # Setup build environment
 if [ -f "build/envsetup.sh" ]; then
-    echo "[INFO] Setting up build environment."
     source build/envsetup.sh
 else
     echo "[ERROR] build/envsetup.sh not found!" >&2
     exit 1
 fi
 
-# Start build with logging of device tree issues
-lunch twrp_klein-eng || {
-    echo "[ERROR] lunch command failed. Possible issues with the device tree. Check the log for details." >&2
-    exit 1
-}
-
-# Build recovery image using multithreading
-mka -j$(nproc) adbd recoveryimage || {
-    echo "[ERROR] Build failed during mka adbd recoveryimage. Possible issues with the device tree. Check the log for details." >&2
-    exit 1
-}
+# Start build
+lunch twrp_klein-eng && mka adbd recoveryimage
 
 # Build complete
 echo "[INFO] Build process completed successfully."
