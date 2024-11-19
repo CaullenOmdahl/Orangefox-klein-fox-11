@@ -35,7 +35,7 @@ if [ ! -d "scripts" ]; then
     git clone https://gitlab.com/OrangeFox/misc/scripts
 else
     echo "[INFO] Updating existing repository at scripts."
-    cd scripts && git pull origin master
+    cd scripts && git pull
     cd ..
 fi
 
@@ -49,24 +49,24 @@ git config --global user.name "Caullen Omdahl"
 git config --global user.email "Caullen.Omdahl@gmail.com"
 
 # Create OrangeFox sync directory
-mkdir -p ~/OrangeFox_sync
-cd ~/OrangeFox_sync
+sudo mkdir -p /OrangeFox_sync && sudo chown $USER:$USER /OrangeFox_sync && mkdir -p ~/OrangeFox_sync
+cd /OrangeFox_sync
 
 # Clone OrangeFox sync repository
 if [ ! -d "sync" ]; then
     git clone https://gitlab.com/OrangeFox/sync.git
 else
     echo "[INFO] Updating existing repository at sync."
-    cd sync && git pull origin main
+    cd sync && git pull
     cd ..
 fi
 
 # Run orangefox_sync script
 cd ~/OrangeFox_sync/sync/
-./orangefox_sync.sh --branch 11.0 --path ~/fox_11.0
+./orangefox_sync.sh --branch 11.0 --path /OrangeFox_sync/fox_11.0
 
 # Clone device tree
-cd ~/fox_11.0/device/
+cd /OrangeFox_sync/fox_11.0/device/
 if [ ! -d "blackshark/klein" ]; then
     git clone https://github.com/CaullenOmdahl/Blackshark-3-TWRP-Device-Tree.git blackshark/klein
 else
@@ -75,7 +75,7 @@ else
 fi
 
 # Set environment variables
-cd ~/fox_11.0
+cd /OrangeFox_sync/fox_11.0
 export ALLOW_MISSING_DEPENDENCIES=true
 export FOX_BUILD_DEVICE=klein
 export LC_ALL=C
