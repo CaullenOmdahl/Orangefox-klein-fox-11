@@ -48,7 +48,7 @@ clone_or_update_repo() {
 install_packages
 
 # Clone or update scripts repository
-clone_or_update_repo "https://gitlab.com/OrangeFox/misc/scripts" "scripts" "master"
+clone_or_update_repo "https://gitlab.com/OrangeFox/misc/scripts" "scripts"
 
 # Run setup scripts
 cd scripts
@@ -63,7 +63,7 @@ fi
 
 if [ -f "setup/install_android_sdk.sh" ]; then
     echo "[INFO] Running install_android_sdk.sh script."
-    sudo bash setup/install_android_sdk.sh
+    sudo bash setup/install_android_sdk.sh || true
 else
     echo "[ERROR] install_android_sdk.sh not found!" >&2
     exit 1
@@ -81,7 +81,7 @@ mkdir -p "$SYNC_DIR"
 cd "$SYNC_DIR"
 
 # Clone or update OrangeFox sync repository
-clone_or_update_repo "https://gitlab.com/OrangeFox/sync.git" "sync" "master"
+clone_or_update_repo "https://gitlab.com/OrangeFox/sync.git" "sync" "main"
 
 cd sync
 
